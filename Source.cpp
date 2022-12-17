@@ -17,6 +17,15 @@ array<array<int, 4>,2> computeMatrix(array<array<int,4>,2> a, array<array<int, 4
 	return c;
 }
 
+void printMatrix(array<array<int, 4>, 2> c) {
+	for (int i = 0; i < c.size(); ++i) {
+		for (int j = 0; j < c[0].size(); ++j) {
+			std::cout << c[i][j] << ' ';
+		}
+		std::cout << '\n';
+	}
+}
+
 int main() {
 	array<array<int,4>, 4> b = { {
 		{2,3,7, 4},
@@ -29,12 +38,6 @@ int main() {
 		{6,8,0,1}
 	} };
 	array<array<int,4>,2> c = computeMatrix(a, b);
-	
-	for (int i = 0; i < a.size(); ++i) {
-		for (int j = 0; j < b.size(); ++j) {
-			std::cout << c[i][j]<< ' ';
-		}
-		std::cout << '\n';
-	}
+	printMatrix(c);
 }
 
