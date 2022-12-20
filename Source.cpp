@@ -4,7 +4,6 @@
 #include <string>
 #include <sstream>
 #include <cctype>
-#include <regex>
 
 using namespace std;
 
@@ -12,16 +11,25 @@ vector<vector<double>> multiplyMatrices(vector<vector<double>>& a, vector<vector
 	vector<vector<double>> c;
 	for (int row = 0; row < a.size(); ++row) {
 		vector<double> rowVector;
-		for (int col = 0; col < b.size(); ++col) {
+		for (int col = 0; col < b[0].size(); ++col) {
 			double value = 0;
-			for (int el = 0; el < b[col].size(); ++el) {
-				value += a[row][el] * b[col][el];
+			for (int el = 0; el < b.size(); ++el) {
+				value += a[row][el] * b[el][col];
 			}
 			rowVector.push_back(value);
 		}
 		c.push_back(rowVector);
 	}
 	return c;
+}
+
+vector<vector<double>> multiplyByFactor(vector<vector<double>>& a, double& factor) {
+	for (int row = 0; row < a.size(); ++row) {
+		for (int col = 0; col < a[row].size(); ++col) {
+			a[row][col] *= factor;
+		}
+	}
+	return a;
 }
 
 vector<vector<double>> addMatrices(vector<vector<double>>& a, vector<vector<double>>& b) {
@@ -60,14 +68,19 @@ void printMatrix(vector<vector<double>> c) {
 	}
 }
 
-vector<vector<double>> createMatrix(string axis) {
-	cout << "To write a " << axis << " in a matrix, type numbers in 1 line separated by 1 space\n"
+vector<vector<double>> createMatrix() {
+	cout << "To write a row in a matrix, type numbers in 1 line separated by 1 space\n"
 		<< "Once you've finished writing the matrix, type 'Done'\n";
 	vector<vector<double>> a;
 	string row, splitValue;
-	cout << "Input " << axis << '\n';
+	cout << "Input row\n";
 	getline(cin, row);
 	while (row != "Done") {
+		if (row == "") {
+			cout << "Cannot be empty\nInput row\n";
+			getline(cin, row);
+			continue;
+		}
 		vector<double> rowVector;
 		stringstream s(row);
 		bool isValid = true;
@@ -89,10 +102,10 @@ vector<vector<double>> createMatrix(string axis) {
 		if (isValid) {
 			a.push_back(rowVector);
 		}
-		row = "";splitValue = "";
-		cout << "Input " << axis << '\n';
+		row = ""; splitValue = "";
+		cout << "Input row\n";
 		getline(cin, row);
-	} 
+	}
 	return a;
 }
 
@@ -100,10 +113,13 @@ bool checkMatrix(vector<vector<double>>& a) {
 	for (int i = 0; i < a.size(); ++i) {
 		if (a[i].size() != a[0].size()) return false;
 	}
-	return true;
+	return a.size() != 0 && true;
 }
-bool checkMatrices(vector<vector<double>>& a, vector<vector<double>>& b) {
-	return a[0].size() == b[0].size();
+bool isMultiplicable(vector<vector<double>>& a, vector<vector<double>>& b) {
+	return a[0].size() == b.size();
+}
+bool isAddable(vector<vector<double>>& a, vector<vector<double>>& b) {
+	return a[0].size() == b[0].size() && a.size() == b.size();
 }
 
 vector<vector<double>> transposeMatrix(vector<vector<double>>& a) {
@@ -122,24 +138,28 @@ void printMenu() {
 	cout << "1 - Multiply matrices\n"
 		<< "2 - Add matrices\n"
 		<< "3 - Subtract matrices\n"
-		<< "4 - Quit";
+		<< "4 - Transpose matrix\n"
+		<< "5 - Multiply a matrix by a factor\n"
+		<< "6 - Quit";
 }
 
-bool createAndCheck(vector<vector<double>>& a, vector<vector<double>>& b, string axisA, string axisB) {
+bool createAndCheck(vector<vector<double>>& a, vector<vector<double>>& b) {
 	cout << "First matrix\n";
-	a = createMatrix(axisA);
+	a = createMatrix();
 	if (!checkMatrix(a)) {
 		return false;
 	}
 	cout << '\n';
 	printMatrix(a);
 	cout << "\nSecond matrix\n";
-	b = createMatrix(axisB);
+	b = createMatrix();
 	if (!checkMatrix(b)) {
 		return false;
 	}
 	cout << '\n';
-	return checkMatrices(a,b);
+	printMatrix(b);
+	cout << '\n';
+	return true;
 }
 
 int main() {
@@ -154,46 +174,75 @@ int main() {
 			cin.clear();
 			cin.ignore(numeric_limits<streamsize>::max(), '\n');
 			continue;
-		}
+		}		
 		vector<vector<double>> a, b;
 		cin.clear();
 		cin.ignore();
 		switch (command) {
-			case 1: 
-				if (!createAndCheck(a, b, "row", "column")) {
-					cout << "The format of the matrix is incorect or matrices cannot be multiplied together\n";
+		case 1:
+			if (!createAndCheck(a, b) || !isMultiplicable(a,b)) {
+				cout << "Either the format of the matrix is incorect or matrices cannot be multiplied together\n";
+				continue;
+			}
+			cout << "\nResult\n\n";
+			printMatrix(multiplyMatrices(a, b));
+			cout << '\n';
+			break;
+		case 2:
+			if (!createAndCheck(a, b) || !isAddable(a,b)) {
+				cout << "Either the format of the matrix is incorect or matrices cannot be sumed up\n";
+				continue;
+			}
+			cout << "\nResult\n\n";
+			printMatrix(addMatrices(a, b));
+			cout << '\n';
+			break;
+		case 3:
+			if (!createAndCheck(a, b) || !isAddable(a,b)) {
+				cout << "Either the format of the matrix is incorect or matrices cannot be subtracted from one another\n";
+				continue;
+			}
+			cout << "\nResult\n\n";
+			printMatrix(subtractMatrices(a, b));
+			cout << '\n';
+			break;
+		case 4:
+			a = createMatrix();
+			if (checkMatrix(a)) {
+				cout << "\nResult\n\n";
+				printMatrix(transposeMatrix(a));
+				cout << '\n';
+			}
+			else {
+				cout << "The matrix isn't formatted properly\n";
+			}
+			break;
+		case 5:
+			a = createMatrix();
+			if (checkMatrix(a)) {
+				cout << "Enter a factor\n";
+				double factor;
+				cin >> factor;
+				if (cin.fail()) {
+					cout << "Only numbers are accepted\n";
+					cin.clear();
+					cin.ignore(numeric_limits<streamsize>::max(), '\n');
 					continue;
 				}
-				printMatrix(transposeMatrix(b));
 				cout << "\nResult\n\n";
-				printMatrix(multiplyMatrices(a, b));
+				printMatrix(multiplyByFactor(a, factor));
 				cout << '\n';
-				break;
-			case 2:
-				if (!createAndCheck(a, b, "row", "row")) {
-					cout << "The format of the matrix is incorect or matrices cannot be sumed up\n";
-					continue;
-				}
-				printMatrix(b);
-				cout << "\nResult\n\n";
-				printMatrix(addMatrices(a, b));
-				cout << '\n';
-				break;
-			case 3:
-				if (!createAndCheck(a, b, "row", "row")) {
-					cout << "The format of the matrix is incorect or matrices cannot be subtracted from one another\n";
-					continue;
-				}
-				printMatrix(b);
-				cout << "\nResult\n\n";
-				printMatrix(subtractMatrices(a, b));
-				cout << '\n';
-				break;
-			case 4:
-				cout << "Exiting...\n";
-				return 0;
-			default:
-				cout << "Operation " << command << " doesn't exist\n";
+			}
+			else {
+				cout << "The matrix isn't formatted properly\n";
+			}
+			break;
+		case 6:
+			cout << "Exiting...\n";
+			return 0;
+		default:
+			cout << "Operation " << command << " doesn't exist\n";
 		}
 	}
 }
+
